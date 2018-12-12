@@ -3,21 +3,21 @@ defmodule ExChecker.Piece do
   Models a chess piece
   """
 
-  defstruct [rank: nil, color: nil, has_moved: false]
+  defstruct rank: nil, color: nil, has_moved: false
 
   @rank_abbrev [king: "K", queen: "Q", bishop: "B", knight: "N", rook: "R", pawn: "P"]
 
   @bishop_moves [
-    (for n <- 1..7, do: {n, n}),
-    (for n <- 1..7, do: {-n, -n}),
-    (for n <- 1..7, do: {n, -n}),
-    (for n <- 1..7, do: {-n, n})
+    for(n <- 1..7, do: {n, n}),
+    for(n <- 1..7, do: {-n, -n}),
+    for(n <- 1..7, do: {n, -n}),
+    for(n <- 1..7, do: {-n, n})
   ]
   @rook_moves [
-    (for y <- 1..7, do: {0, y}),
-    (for y <- 1..7, do: {0, -y}),
-    (for x <- 1..7, do: {x, 0}),
-    (for x <- 1..7, do: {-x, 0})
+    for(y <- 1..7, do: {0, y}),
+    for(y <- 1..7, do: {0, -y}),
+    for(x <- 1..7, do: {x, 0}),
+    for(x <- 1..7, do: {-x, 0})
   ]
   @white_pawn_capture_moves [[{1, 1, :capture}], [{-1, 1, :capture}]]
   @black_pawn_capture_moves [[{1, -1, :capture}], [{-1, -1, :capture}]]
@@ -47,7 +47,7 @@ defmodule ExChecker.Piece do
   def pawn(color), do: new(:pawn, color)
 
   def possible_moves(%__MODULE__{rank: :king}) do
-    [[{0, 1}], [{1, 1}], [{1, 0}], [{1, -1}], [{0, -1}], [{-1, -1}], [{-1, 0}], [{-1,  1}]]
+    [[{0, 1}], [{1, 1}], [{1, 0}], [{1, -1}], [{0, -1}], [{-1, -1}], [{-1, 0}], [{-1, 1}]]
   end
 
   def possible_moves(%__MODULE__{rank: :knight}) do
@@ -65,17 +65,21 @@ defmodule ExChecker.Piece do
   def possible_moves(%__MODULE__{rank: :pawn, color: :white, has_moved: false}) do
     [[{0, 1}, {0, 2}]] ++ @white_pawn_capture_moves
   end
+
   def possible_moves(%__MODULE__{rank: :pawn, color: :white, has_moved: true}) do
     [[{0, 1}]] ++ @white_pawn_capture_moves
   end
+
   def possible_moves(%__MODULE__{rank: :pawn, color: :black, has_moved: false}) do
     [[{0, -1}, {0, -2}]] ++ @black_pawn_capture_moves
   end
+
   def possible_moves(%__MODULE__{rank: :pawn, color: :black, has_moved: true}) do
     [[{0, -1}]] ++ @black_pawn_capture_moves
   end
 
   def to_string(nil), do: ""
+
   def to_string(%{rank: rank, color: color}) do
     with abbrev <- Keyword.get(@rank_abbrev, rank) do
       case color do

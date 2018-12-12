@@ -8,7 +8,7 @@ defmodule ExChecker.PGN.Parser do
 
   def parse!(filename) do
     filename
-    |> File.read!
+    |> File.read!()
     |> String.split("\n", trim: true)
     |> Enum.reject(&Regex.match?(~r/^\s*$/, &1))
     |> split_metadata()
@@ -21,7 +21,9 @@ defmodule ExChecker.PGN.Parser do
 
   defp parse_metadata(metadata) do
     Enum.into(metadata, %{}, fn datum ->
-      %{"key" => k, "value" => v } = Regex.named_captures(~r/^\[(?<key>[^\s]+)\s+\"(?<value>.*)\"\]/, datum)
+      %{"key" => k, "value" => v} =
+        Regex.named_captures(~r/^\[(?<key>[^\s]+)\s+\"(?<value>.*)\"\]/, datum)
+
       {k, v}
     end)
   end
@@ -35,9 +37,9 @@ defmodule ExChecker.PGN.Parser do
   defp parse_turns(game) do
     game
     |> String.replace(@result_regex, "")
-    |> String.trim
+    |> String.trim()
     |> String.split(~r/\d+\./, trim: true)
-    |> Enum.map(&Regex.named_captures(@turn_regex, &1, [capture: [:white, :black, :comment]]))
+    |> Enum.map(&Regex.named_captures(@turn_regex, &1, capture: [:white, :black, :comment]))
     |> Enum.with_index(1)
     |> Enum.into(%{}, fn {map, i} ->
       {
@@ -51,8 +53,12 @@ defmodule ExChecker.PGN.Parser do
   end
 
   def parse_move(_, ""), do: %ExChecker.Move{original: ""}
-  def parse_move(color, str = "O-O"), do: %ExChecker.Move{castle: :kingside, color: color, original: str}
-  def parse_move(color, str = "O-O-O"), do: %ExChecker.Move{castle: :queenside, color: color, original: str}
+
+  def parse_move(color, str = "O-O"),
+    do: %ExChecker.Move{castle: :kingside, color: color, original: str}
+
+  def parse_move(color, str = "O-O-O"),
+    do: %ExChecker.Move{castle: :queenside, color: color, original: str}
 
   def parse_move(color, str = "K" <> rest), do: parse_move(:king, color, rest, str)
   def parse_move(color, str = "Q" <> rest), do: parse_move(:queen, color, rest, str)
@@ -62,7 +68,12 @@ defmodule ExChecker.PGN.Parser do
   def parse_move(color, str = move), do: parse_move(:pawn, color, move, str)
 
   def parse_move(piece, color, move, original) do
-    captures = Regex.named_captures(~r/^((?<from>[^x]+)?(?<capture>x?))(?<to>[^+#]{2})(?<check>[+#])?$/, move)
+    captures =
+      Regex.named_captures(
+        ~r/^((?<from>[^x]+)?(?<capture>x?))(?<to>[^+#]{2})(?<check>[+#])?$/,
+        move
+      )
+
     captures = Enum.map(captures, fn {k, v} -> {String.to_atom(k), v} end)
     %{struct(ExChecker.Move, captures) | piece: piece, color: color, original: original}
   end
