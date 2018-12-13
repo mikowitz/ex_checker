@@ -7,7 +7,7 @@ defmodule ExChecker.PGN.ParserTest do
     parsed = Parser.parse!("test/assets/chandler_kasparov.pgn")
 
     assert parsed.metadata["Result"] == "1-0"
-    [white, black] = parsed.game[1]
+    [white, black] = parsed.game |> Enum.at(0)
     assert white.original == "e4"
     assert black.original == "c5"
   end

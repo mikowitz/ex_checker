@@ -26,8 +26,8 @@ defmodule ExChecker.Game do
     game = %Game{metadata: md}
 
     turns
-    |> Enum.sort_by(fn {k, _} -> k end)
-    |> Enum.reduce(game, fn {_turn_no, [white, black]}, game ->
+    # |> Enum.sort_by(fn {k, _} -> k end)
+    |> Enum.reduce(game, fn [white, black], game ->
       {:ok, game} = move(game, white)
       {:ok, game} = move(game, black)
       %{game | fullmove: game.fullmove + 1}

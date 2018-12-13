@@ -41,15 +41,11 @@ defmodule ExChecker.PGN.Parser do
     |> String.replace(@result_regex, "")
     |> String.split(~r/\d+\./, trim: true)
     |> Enum.map(&Regex.named_captures(@turn_regex, &1, capture: [:white, :black, :comment]))
-    |> Enum.with_index(1)
-    |> Enum.into(%{}, fn {map, i} ->
-      {
-        i,
-        [
-          parse_move(:white, map["white"]),
-          parse_move(:black, map["black"])
-        ]
-      }
+    |> Enum.map(fn map ->
+      [
+        parse_move(:white, map["white"]),
+        parse_move(:black, map["black"])
+      ]
     end)
   end
 
