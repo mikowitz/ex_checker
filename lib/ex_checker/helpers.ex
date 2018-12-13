@@ -6,6 +6,7 @@ defmodule ExChecker.Helpers do
     for r <- '87654321', do: for(f <- 'abcdefgh', do: [f, r] |> to_string |> to_atom)
   end
 
+  def to_atom(nil), do: nil
   def to_atom(a) when is_atom(a), do: a
   def to_atom(x), do: x |> to_string |> String.to_atom()
 

@@ -10,9 +10,7 @@ defmodule ExChecker.Game do
             en_passant_square: nil,
             metadata: %{}
 
-  alias __MODULE__
-  alias ExChecker.{Board, Helpers, Move}
-  alias ExChecker.PGN.Parser
+  alias ExChecker.{Game, Move, PGN.Parser}
 
   @doc """
 
@@ -22,50 +20,6 @@ defmodule ExChecker.Game do
 
   """
   def new, do: %__MODULE__{}
-
-  @doc """
-
-      iex> game = Game.new
-      iex> {:error, _, error} = Game.move(game, %Move{piece: :pawn, color: :black, from: :e2, to: :e4})
-      iex> error
-      :whites_turn
-
-      iex> game = Game.new
-      iex> {:ok, game} = Game.move(game, %Move{piece: :pawn, color: :white, from: :c2, to: :c4})
-      iex> game.turn
-      :black
-
-  """
-  def move(game = %Game{turn: :white}, %Move{color: :black}), do: {:error, game, :whites_turn}
-  def move(game = %Game{turn: :black}, %Move{color: :white}), do: {:error, game, :blacks_turn}
-
-  def move(game, move) do
-    move = Board.complete_move(game.board, game.turn, move, game.en_passant_square)
-
-    game = %{
-      game
-      | board: Board.perform_move(game.board, game.turn, move),
-        turn: toggle_turn(game.turn)
-    }
-
-    game =
-      cond do
-        is_capture(move) ->
-          %{game | halfmove: 0, en_passant_square: nil}
-
-        is_pawn_two_square(move) ->
-          en_passant_square = en_passant_square(move.to, move.color)
-          %{game | halfmove: 0, en_passant_square: en_passant_square}
-
-        true ->
-          %{game | halfmove: game.halfmove + 1, en_passant_square: nil}
-      end
-
-    {:ok, game}
-  end
-
-  defp toggle_turn(:black), do: :white
-  defp toggle_turn(:white), do: :black
 
   def run_pgn(filename) do
     %{game: turns, metadata: md} = Parser.parse!(filename)
@@ -80,24 +34,51 @@ defmodule ExChecker.Game do
     end)
   end
 
-  defp is_capture(%Move{capture: "x"}), do: true
-  defp is_capture(_), do: false
+  @doc """
 
-  defp is_pawn_two_square(%Move{piece: :pawn, from: from, to: to}) do
-    {fr, ff} = Helpers.rank_file(from)
-    {tr, tf} = Helpers.rank_file(to)
-    ff == tf && abs(fr - tr) == 2
+      iex> game = Game.new
+      iex> {:error, _, error} = Game.move(game, %Move{piece: :pawn, color: :black, from: :e2, to: :e4})
+      iex> error
+      :whites_turn
+
+      iex> game = Game.new
+      iex> {:ok, game} = Game.move(game, %Move{piece: :pawn, color: :white, from: :c2, to: :c4})
+      iex> game.turn
+      :black
+
+  """
+  def move(game = %Game{turn: color}, move = %Move{color: color}) do
+    move = ExChecker.MoveHelper.complete_move(game, move)
+
+    game = %{
+      game
+      | board: ExChecker.MoveHelper.perform_move(game.board, game.turn, move)
+    } |> toggle_turn
+
+    game =
+      cond do
+        Move.is_capture(move) -> %{game | halfmove: 0, en_passant_square: nil}
+        Move.is_pawn_two_square(move) ->
+          %{game |
+            halfmove: 0,
+            en_passant_square: ExChecker.EnPassantHelper.en_passant_target_square(move.to, move.color)
+          }
+        true ->
+          %{game | halfmove: game.halfmove + 1, en_passant_square: nil}
+      end
+
+    {:ok, game}
   end
+  def move(game = %Game{turn: color}, %Move{}), do: {:error, game, :"#{color}s_turn"}
 
-  defp is_pawn_two_square(_), do: false
+  defp toggle_turn(game = %{turn: :black}), do: %{game | turn: :white}
+  defp toggle_turn(game = %{turn: :white}), do: %{game | turn: :black}
 
-  def en_passant_square(capture_end, :white) do
-    {tr, tf} = Helpers.rank_file(capture_end)
-    :"#{tf}#{tr - 1}"
+
+  def can_kingside_castle(board, color) do
+    ExChecker.CastleHelper.kingside_castle(board, color) in [:potential, :possible]
   end
-
-  def en_passant_square(capture_end, :black) do
-    {tr, tf} = Helpers.rank_file(capture_end)
-    :"#{tf}#{tr + 1}"
+  def can_queenside_castle(board, color) do
+    ExChecker.CastleHelper.queenside_castle(board, color) in [:potential, :possible]
   end
 end
