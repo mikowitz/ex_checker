@@ -1,5 +1,5 @@
 defmodule ExChecker.MoveHelper do
-  alias ExChecker.{Board, EnPassantHelper, Helpers, Move}
+  alias ExChecker.{Board, EnPassantHelper, Helpers}
 
   def is_valid_move(board, piece, from, to) do
     to in valid_moves(piece, from, board)

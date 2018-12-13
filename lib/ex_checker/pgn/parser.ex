@@ -5,7 +5,7 @@ defmodule ExChecker.PGN.Parser do
 
   @turn_regex ~r/(?<white>[^\s]+)\s?(?<black>[^\s]+)?(?<comment>.*)?$/
   @result_regex ~r/(1|0|1\/2)-(1|0|1\/2)/
-  @move_regex ~r/^((?<from>[^x]+)?(?<capture>x?))(?<to>[^+#]{2})(?<check>[+#])?$/
+  @move_regex ~r/^(?<rank>[KQRNB])?(?<from>[^x]+)?(?<capture>x?)(?<to>[^+#]{2})(?<check>[+#])?$/
 
   alias ExChecker.Helpers
 
@@ -53,20 +53,26 @@ defmodule ExChecker.PGN.Parser do
     end)
   end
 
-  defp parse_move(_, ""), do: %ExChecker.Move{original: ""}
-  defp parse_move(color, str = "O-O"),
-    do: %ExChecker.Move{castle: :kingside, color: color, original: str}
-  defp parse_move(color, str = "O-O-O"),
-    do: %ExChecker.Move{castle: :queenside, color: color, original: str}
-  defp parse_move(color, str = "K" <> rest), do: parse_move(:king, color, rest, str)
-  defp parse_move(color, str = "Q" <> rest), do: parse_move(:queen, color, rest, str)
-  defp parse_move(color, str = "R" <> rest), do: parse_move(:rook, color, rest, str)
-  defp parse_move(color, str = "N" <> rest), do: parse_move(:knight, color, rest, str)
-  defp parse_move(color, str = "B" <> rest), do: parse_move(:bishop, color, rest, str)
-  defp parse_move(color, str = move), do: parse_move(:pawn, color, move, str)
-  defp parse_move(piece, color, move, original) do
+  def parse_move(_, ""), do: %ExChecker.Move{original: ""}
+  def parse_move(color, str = "O-O"), do: %ExChecker.Move{castle: :kingside, color: color, original: str}
+  def parse_move(color, str = "O-O-O"), do: %ExChecker.Move{castle: :queenside, color: color, original: str}
+  def parse_move(color, move) do
     captures = Regex.named_captures(@move_regex, move)
-    captures = Enum.map(captures, fn {k, v} -> {Helpers.to_atom(k), v} end)
-    %{struct(ExChecker.Move, captures) | piece: piece, color: color, original: original}
+    move_map = Enum.into(captures, %{color: color, original: move}, fn {k, v} ->
+      {
+        Helpers.to_atom(k),
+        (if v == "", do: nil, else: v)
+      }
+    end)
+    |> Map.put(:piece, piece_from(captures["rank"]))
+    struct(ExChecker.Move, move_map)
   end
+
+  defp piece_from("K"), do: :king
+  defp piece_from("Q"), do: :queen
+  defp piece_from("R"), do: :rook
+  defp piece_from("B"), do: :bishop
+  defp piece_from("N"), do: :knight
+  defp piece_from(""), do: :pawn
+  defp piece_from(nil), do: :pawn
 end
