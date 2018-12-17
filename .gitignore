@@ -23,3 +23,6 @@ erl_crash.dump
 ex_checker-*.tar
 
 /pgn/
+*.txt
+lib/ex_checker/weighter.ex
+test/ex_checker/weighter_test.exs
