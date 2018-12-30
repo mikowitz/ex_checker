@@ -4,7 +4,7 @@ defmodule ExChecker.EnPassantHelper do
   def find_en_passant_moves_for(board, move) do
     board
     |> possible_en_passant_moves_to(move.to)
-    |> ExChecker.MoveHelper.filter_moves_by_origin(move)
+    |> ExChecker.MoveCompletionHelper.filter_moves_by_origin(move)
   end
 
   def is_valid_en_passant_move(board, piece, from, to) do
@@ -19,10 +19,10 @@ defmodule ExChecker.EnPassantHelper do
     |> Enum.map(fn moves ->
       Enum.reduce_while(moves, [], fn
         {dx, dy}, acc ->
-          ExChecker.MoveHelper.handle_regular_move({x, y}, {dx, dy}, board, piece, acc)
+          ExChecker.MoveCompletionHelper.handle_regular_move({x, y}, {dx, dy}, board, piece, acc)
 
         {dx, dy, :capture}, acc ->
-          ExChecker.MoveHelper.handle_regular_move({x, y}, {dx, dy}, board, piece, acc)
+          ExChecker.MoveCompletionHelper.handle_regular_move({x, y}, {dx, dy}, board, piece, acc)
       end)
     end)
     |> List.flatten()

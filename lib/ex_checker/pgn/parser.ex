@@ -3,9 +3,9 @@ defmodule ExChecker.PGN.Parser do
   Code for parsing a .pgn file
   """
 
-  @turn_regex ~r/(?<white>[^\s]+)\s?(?<black>[^\s]+)?(?<comment>.*)?$/
+  @turn_regex ~r/(?<white>[^\s]+)\s?(?<black>[^\s]+)?\s+$/
   @result_regex ~r/(1|0|1\/2)-(1|0|1\/2)/
-  @move_regex ~r/^(?<rank>[KQRNB])?(?<from>[^x]+)?(?<capture>x?)(?<to>[^+#]{2})(?<check>[+#])?$/
+  @move_regex ~r/^(?<piece>[KQRNB])?(?<from>[^x]+)?(?<capture>x?)(?<to>[^+#]{2})(?<check>[+#])?$/
 
   alias ExChecker.Helpers
 
@@ -40,7 +40,7 @@ defmodule ExChecker.PGN.Parser do
     game
     |> String.replace(@result_regex, "")
     |> String.split(~r/\d+\./, trim: true)
-    |> Enum.map(&Regex.named_captures(@turn_regex, &1, capture: [:white, :black, :comment]))
+    |> Enum.map(&Regex.named_captures(@turn_regex, &1, capture: [:white, :black]))
     |> Enum.map(fn map ->
       [
         parse_move(:white, map["white"]),
@@ -53,22 +53,15 @@ defmodule ExChecker.PGN.Parser do
   def parse_move(color, str = "O-O"), do: %ExChecker.Move{castle: :kingside, color: color, original: str}
   def parse_move(color, str = "O-O-O"), do: %ExChecker.Move{castle: :queenside, color: color, original: str}
   def parse_move(color, move) do
-    captures = Regex.named_captures(@move_regex, move)
-    move_map = Enum.into(captures, %{color: color, original: move}, fn {k, v} ->
+    IO.inspect move
+    Regex.named_captures(@move_regex, move)
+    |> Enum.into(%{color: color, original: move}, fn {k, v} ->
       {
         Helpers.to_atom(k),
         (if v == "", do: nil, else: v)
       }
     end)
-    |> Map.put(:piece, piece_from(captures["rank"]))
-    struct(ExChecker.Move, move_map)
+    |> ExChecker.Move.generate
   end
-
-  defp piece_from("K"), do: :king
-  defp piece_from("Q"), do: :queen
-  defp piece_from("R"), do: :rook
-  defp piece_from("B"), do: :bishop
-  defp piece_from("N"), do: :knight
-  defp piece_from(""), do: :pawn
-  defp piece_from(nil), do: :pawn
 end
+

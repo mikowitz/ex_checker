@@ -25,12 +25,20 @@ defmodule ExChecker.Game do
     %{game: turns, metadata: md} = Parser.parse!(filename)
     game = %Game{metadata: md}
 
-    turns
-    # |> Enum.sort_by(fn {k, _} -> k end)
-    |> Enum.reduce(game, fn [white, black], game ->
-      {:ok, game} = move(game, white)
-      {:ok, game} = move(game, black)
-      %{game | fullmove: game.fullmove + 1}
+    File.open("#{filename}.txt", [:write], fn file ->
+      IO.write(file, "#{ExChecker.Weighter.print_weights(game.board)}\n")
+      turns
+      |> Enum.reduce(game, fn [white, black], game ->
+        IO.inspect "#{white.original} #{black.original}"
+        {:ok, game} = move(game, white)
+        IO.write(file, "#{ExChecker.Weighter.print_weights(game.board)}\n")
+        game = case move(game, black) do
+          {:ok, game} -> game
+          {:error, game, _} -> game
+        end
+        IO.write(file, "#{ExChecker.Weighter.print_weights(game.board)}\n")
+        %{game | fullmove: game.fullmove + 1}
+      end)
     end)
   end
 
@@ -48,11 +56,11 @@ defmodule ExChecker.Game do
 
   """
   def move(game = %Game{turn: color}, move = %Move{color: color}) do
-    move = ExChecker.MoveHelper.complete_move(game, move)
+    move = ExChecker.MoveCompletionHelper.complete_move(game, move)
 
     game = %{
       game
-      | board: ExChecker.MoveHelper.perform_move(game.board, game.turn, move)
+      | board: ExChecker.MoveHelper.perform_move(game, move)
     } |> toggle_turn
 
     game =
