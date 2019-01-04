@@ -29,7 +29,7 @@ defmodule ExChecker.Game do
       IO.write(file, "#{ExChecker.Weighter.print_weights(game.board)}\n")
       turns
       |> Enum.reduce(game, fn [white, black], game ->
-        IO.inspect "#{white.original} #{black.original}"
+        # IO.inspect "#{white.original} #{black.original}"
         {:ok, game} = move(game, white)
         IO.write(file, "#{ExChecker.Weighter.print_weights(game.board)}\n")
         game = case move(game, black) do

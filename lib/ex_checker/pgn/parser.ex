@@ -53,7 +53,7 @@ defmodule ExChecker.PGN.Parser do
   def parse_move(color, str = "O-O"), do: %ExChecker.Move{castle: :kingside, color: color, original: str}
   def parse_move(color, str = "O-O-O"), do: %ExChecker.Move{castle: :queenside, color: color, original: str}
   def parse_move(color, move) do
-    IO.inspect move
+    # IO.inspect move
     Regex.named_captures(@move_regex, move)
     |> Enum.into(%{color: color, original: move}, fn {k, v} ->
       {
